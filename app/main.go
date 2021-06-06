@@ -1,20 +1,26 @@
 package main
 
 import (
-	_ "database/sql"
+	"database/sql"
 	"fmt"
+	"forums/config"
+	"forums/internal/user"
+	userDelivery "forums/internal/user/delivery/http"
+	userRepo "forums/internal/user/repository"
+	userUcase "forums/internal/user/usecase"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	_ "github.com/warlikegh/db_project/config"
+	_ "github.com/lib/pq"
+	"log"
 )
 
 type initRoute struct {
-	e *echo.Echo
+	e    *echo.Echo
+	user user.UserHandler
 }
 
 func handler(c echo.Context) error {
-	fmt.Println("paramValues = ", c.ParamValues(), "\nPath = ", c.Path(), "\nqueryParams = ", c.QueryParams(), "\nRequest = ",
-		c.Request(), "\n\n")
+	fmt.Println("paramValues = ", c.ParamValues(), "\nPath = ", c.Path())
 	return nil
 }
 
@@ -37,31 +43,35 @@ func route(data initRoute) {
 	data.e.GET("/thread/:slugOrId/posts", handler)
 	data.e.POST("/thread/:slugOrId/vote", handler)
 
-	data.e.POST("/user/:nickname/create", handler)
-	data.e.GET("/user/:nickname/profile", handler)
+	data.e.POST("/user/:nickname/create", data.user.Create)
+	data.e.GET("/user/:nickname/profile", data.user.GetUserData)
 	data.e.POST("/user/:nickname/profile", handler)
 }
 
 func main() {
 	e := echo.New()
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-		Format: "method=${method}, uri=${uri}, status=${status}, time=${time_rfc3339_nano}\n",
+		Format: "method=${method}\n uri=${uri}\n status=${status}\n time=${time_rfc3339_nano}\n\n",
 	}))
-	route(initRoute{e})
 
-	//dsn := fmt.Sprintf("user=%s password=%s dbname=%s", config.DBUser, config.DBPass, config.DBName)
-	//db, err := sql.Open(config.PostgresDB, dsn)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//
-	//db.SetMaxOpenConns(10)
-	//db.SetMaxIdleConns(3)
-	//
-	//err = db.Ping()
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
+	dsn := fmt.Sprintf("user=%s password=%s dbname=%s", config.DBUser, config.DBPass, config.DBName)
+	db, err := sql.Open(config.PostgresDB, dsn)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = db.Ping()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	userRepo_ := userRepo.NewUserRepo(db)
+	userUcase_ := userUcase.NewUserUsecase(userRepo_)
+	userHandler_ := userDelivery.NewUserHandler(userUcase_)
+
+	route(initRoute{
+		e:    e,
+		user: userHandler_,
+	})
 
 	e.Logger.Fatal(e.Start(":5000"))
 }
