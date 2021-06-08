@@ -20,8 +20,9 @@ func NewUserHandler(userUcase userModel.UserUsecase) userModel.UserHandler {
 }
 
 func (h Handler) Create(c echo.Context) error {
-	fmt.Println("create user handler", c.QueryParams(), c.ParamValues(), c.Request().Body)
+	//fmt.Println("create user handler", c.ParamValues())
 	newUser := new(models.User)
+	newUser.Nickname = c.Param("nickname")
 	if err := c.Bind(newUser); err != nil {
 		// TODO error
 		return nil
@@ -29,14 +30,17 @@ func (h Handler) Create(c echo.Context) error {
 
 	responseUser, err := h.UserUcase.Create(*newUser)
 	if err != nil {
-		// TODO error
-		return nil
+		return models.SendResponseWithErrorConflict(c, responseUser)
 	}
 
-	return models.SendResponse(c, responseUser)
+	return models.SendResponseCreate(c, responseUser)
 }
 
 func (h Handler) GetUserData(c echo.Context) error {
-	fmt.Println("get user handler", c.QueryParams(), c.ParamValues(), c.Request().Body)
-	return models.SendResponse(c, nil)
+	fmt.Println("get user handler", c.ParamValues())
+	user, err := h.UserUcase.GetByNickName(c.Param("nickname"))
+	if err != nil {
+		return models.SendResponseWithErrorNotFound(c)
+	}
+	return models.SendResponse(c, user)
 }

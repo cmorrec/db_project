@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"forums/internal/models"
 	"forums/internal/user"
+	"forums/utils"
 )
 
 type userRepo struct {
@@ -17,7 +18,14 @@ func NewUserRepo(db *sql.DB) user.UserRepo {
 }
 
 func (u userRepo) Create(newUser models.User) (models.User, error) {
-	// TODO check user with this data
+	userNickname, errNickname := u.GetByNickName(newUser.Nickname)
+	if errNickname == nil {
+		return userNickname, &utils.CustomError{"error"}
+	}
+	userEmail, errEmail := u.GetByEmail(newUser.Email)
+	if errEmail == nil {
+		return userEmail, &utils.CustomError{"error"}
+	}
 
 	query :=
 		`
@@ -37,23 +45,35 @@ func (u userRepo) GetByNickName(nickname string) (models.User, error) {
 	FROM users 
 	WHERE nickname=$1
 	`
-	DBuser, err := u.DB.Query(query, nickname)
-	if err != nil {
-		// TODO return real error. NOT this
-		return models.User{}, nil
-	}
 	user_ := new(models.User)
-	for DBuser.Next() {
-		err = DBuser.Scan(
-			&user_.Nickname,
-			&user_.Fullname,
-			&user_.About,
-			&user_.Email,
-		)
-		if err != nil {
-			// TODO return real error. NOT this
-			return models.User{}, nil
-		}
+	err := u.DB.QueryRow(query, nickname).Scan(
+		&user_.Nickname,
+		&user_.Fullname,
+		&user_.About,
+		&user_.Email,
+	)
+	if user_.Nickname != nickname {
+		return models.User{}, err
+	}
+	return *user_, nil
+}
+
+func (u userRepo) GetByEmail(email string) (models.User, error) {
+	query :=
+		`
+	SELECT nickname, fullname, about, email
+	FROM users 
+	WHERE email=$1
+	`
+	user_ := new(models.User)
+	err := u.DB.QueryRow(query, email).Scan(
+		&user_.Nickname,
+		&user_.Fullname,
+		&user_.About,
+		&user_.Email,
+	)
+	if user_.Email != email {
+		return models.User{}, err
 	}
 	return *user_, nil
 }

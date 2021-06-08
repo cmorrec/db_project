@@ -18,7 +18,7 @@ func NewUserUsecase(repo user.UserRepo) user.UserUsecase {
 func (u userUsecase) Create(user_ models.User) (*models.User, error) {
 	newUser, err := u.userRepository.Create(user_)
 	if err != nil {
-		return nil, err
+		return &newUser, err
 	}
 
 	return &newUser, nil

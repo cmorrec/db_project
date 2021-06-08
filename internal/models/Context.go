@@ -5,9 +5,8 @@ import (
 	"net/http"
 )
 
-type message struct {
-	Code int         `json:"code"`
-	Data interface{} `json:"data"`
+type CustomError struct {
+	Message string `json:"message"`
 }
 //
 //func GetContext(c echo.Context) context.Context {
@@ -18,13 +17,21 @@ type message struct {
 //	return context.WithValue(ctx, "request_id", c.Get("request_id"))
 //}
 
+
+
 func SendResponse(c echo.Context, data interface{}) error {
-	serverMessage := message{http.StatusOK, data}
-	return c.JSON(http.StatusOK, serverMessage)
+	return c.JSON(http.StatusOK, data)
 }
 
-func SendResponseWithError(c echo.Context, err error) error {
-	// TODO
-	return err
+func SendResponseCreate(c echo.Context, data interface{}) error {
+	return c.JSON(http.StatusCreated, data)
+}
+
+func SendResponseWithErrorNotFound(c echo.Context) error {
+	return c.JSON(http.StatusNotFound, CustomError{"Can't find user with id #42\n"})
+}
+
+func SendResponseWithErrorConflict(c echo.Context, data interface{}) error {
+	return c.JSON(http.StatusConflict, data)
 }
 
