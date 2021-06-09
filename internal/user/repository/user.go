@@ -77,3 +77,13 @@ func (u userRepo) GetByEmail(email string) (models.User, error) {
 	}
 	return *user_, nil
 }
+
+func (u userRepo) UpdateUserData(updateUser models.User) (models.User, error) {
+	query := `UPDATE users SET fullname = $1, about = $2, email = $3 WHERE nickname = $4`
+	_, err := u.DB.Exec(query, updateUser.Fullname, updateUser.About, updateUser.Email, updateUser.Nickname)
+	if err != nil {
+		return models.User{}, err
+	}
+
+	return updateUser, nil
+}

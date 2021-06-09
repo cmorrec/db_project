@@ -45,7 +45,7 @@ func route(data initRoute) {
 
 	data.e.POST("/user/:nickname/create", data.user.Create)
 	data.e.GET("/user/:nickname/profile", data.user.GetUserData)
-	data.e.POST("/user/:nickname/profile", handler)
+	data.e.POST("/user/:nickname/profile", data.user.UpdateUserData)
 }
 
 func main() {
