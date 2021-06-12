@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"forums/internal/models"
 	"forums/internal/user"
-	"forums/utils"
+	"strings"
 )
 
 type userRepo struct {
@@ -18,15 +18,6 @@ func NewUserRepo(db *sql.DB) user.UserRepo {
 }
 
 func (u userRepo) Create(newUser models.User) (models.User, error) {
-	userNickname, errNickname := u.GetByNickName(newUser.Nickname)
-	if errNickname == nil {
-		return userNickname, &utils.CustomError{"error"}
-	}
-	userEmail, errEmail := u.GetByEmail(newUser.Email)
-	if errEmail == nil {
-		return userEmail, &utils.CustomError{"error"}
-	}
-
 	query :=
 		`
 	INSERT INTO users (nickname, fullname, about, email) 
@@ -52,7 +43,7 @@ func (u userRepo) GetByNickName(nickname string) (models.User, error) {
 		&user_.About,
 		&user_.Email,
 	)
-	if user_.Nickname != nickname {
+	if !strings.EqualFold(user_.Nickname, nickname) {
 		return models.User{}, err
 	}
 	return *user_, nil
@@ -72,7 +63,7 @@ func (u userRepo) GetByEmail(email string) (models.User, error) {
 		&user_.About,
 		&user_.Email,
 	)
-	if user_.Email != email {
+	if !strings.EqualFold(user_.Email, email) {
 		return models.User{}, err
 	}
 	return *user_, nil

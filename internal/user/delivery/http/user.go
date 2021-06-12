@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"forums/internal/models"
 	userModel "forums/internal/user"
 	"github.com/labstack/echo/v4"
@@ -23,6 +24,7 @@ func (h Handler) Create(c echo.Context) error {
 	newUser.Nickname = c.Param("nickname")
 	if err := c.Bind(newUser); err != nil {
 		// TODO error
+		fmt.Println("no bind")
 		return nil
 	}
 
@@ -31,7 +33,7 @@ func (h Handler) Create(c echo.Context) error {
 		return models.SendResponseWithErrorConflict(c, responseUser)
 	}
 
-	return models.SendResponseCreate(c, responseUser)
+	return models.SendResponseCreate(c, responseUser[0])
 }
 
 func (h Handler) GetUserData(c echo.Context) error {

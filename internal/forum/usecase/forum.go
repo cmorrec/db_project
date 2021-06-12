@@ -19,11 +19,11 @@ func NewForumUsecase(repo forum.ForumRepo) forum.ForumUsecase {
 func (u forumUsecase) CreateForum(forum_ models.Forum) (*models.Forum, error) {
 	// 1 check that not 404
 	user, err := u.forumRepository.GetUserByNickName(forum_.User)
-	if user.Nickname == "" || err != nil {
+	if err != nil || user.Nickname == "" {
 		return nil, &utils.CustomError{"404"}
 	}
 	// 2 check that not 409
-	sameSlugForum, err := u.forumRepository.GetBySlug(forum_.Slug)
+	sameSlugForum, err := u.forumRepository.GetForumBySlug(forum_.Slug)
 	if err == nil && sameSlugForum.Slug != "" {
 		return &sameSlugForum, &utils.CustomError{"409"}
 	}
@@ -37,10 +37,30 @@ func (u forumUsecase) CreateForum(forum_ models.Forum) (*models.Forum, error) {
 }
 
 func (u forumUsecase) GetForumBySlug(slug string) (*models.Forum, error) {
-	forum_, err := u.forumRepository.GetBySlug(slug)
+	forum_, err := u.forumRepository.GetForumBySlug(slug)
 	if err != nil || forum_.Slug == "" {
 		return nil, &utils.CustomError{"404"}
 	}
 
 	return &forum_, nil
+}
+
+func (u forumUsecase) CreateThread(thread models.Thread) (*models.Thread, error) {
+	// 1 check that not 404
+	user, err := u.forumRepository.GetUserByNickName(thread.Author)
+	if err != nil || user.Nickname == "" {
+		return nil, &utils.CustomError{"404"}
+	}
+	// 2 check that not 409
+	sameTitleThread, err := u.forumRepository.GetThreadByTitle(thread.Title)
+	if err == nil && sameTitleThread.Title != "" {
+		return &sameTitleThread, &utils.CustomError{"409"}
+	}
+
+	newForum, err := u.forumRepository.CreateThread(thread)
+	if err != nil {
+		return &newForum, err
+	}
+
+	return &newForum, nil
 }

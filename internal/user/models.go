@@ -12,7 +12,7 @@ type UserHandler interface {
 }
 
 type UserUsecase interface {
-	Create(user models.User) (*models.User, error)
+	Create(user models.User) ([]models.User, error)
 	GetByNickName(nickname string) (*models.User, error)
 	UpdateUserData(user models.User) (*models.User, error)
 }

@@ -30,27 +30,27 @@ func handler(c echo.Context) error {
 }
 
 func route(data initRoute) {
-	data.e.POST("/forum/create", data.forum.CreateForum)
-	data.e.GET("/forum/:slug/details", data.forum.GetForumBySlug)
-	data.e.POST("/forum/:slug/create", handler)
-	data.e.GET("/forum/:slug/users", handler)
-	data.e.GET("/forum/:slug/threads", handler)
+	data.e.POST("/api/forum/create", data.forum.CreateForum)
+	data.e.GET("/api/forum/:slug/details", data.forum.GetForumBySlug)
+	data.e.POST("/api/forum/:slug/create", data.forum.CreateThread)
+	data.e.GET("/api/forum/:slug/users", handler)
+	data.e.GET("/api/forum/:slug/threads", handler)
 
-	data.e.GET("/post/:id/details", handler)
-	data.e.POST("/post/:id/details", handler)
+	data.e.GET("/api/post/:id/details", handler)
+	data.e.POST("/api/post/:id/details", handler)
 
-	data.e.POST("/service/clear", handler)
-	data.e.GET("/service/status", handler)
+	data.e.POST("/api/service/clear", handler)
+	data.e.GET("/api/service/status", handler)
 
-	data.e.POST("/thread/:slugOrId/create", handler)
-	data.e.GET("/thread/:slugOrId/details", handler)
-	data.e.POST("/thread/:slugOrId/details", handler)
-	data.e.GET("/thread/:slugOrId/posts", handler)
-	data.e.POST("/thread/:slugOrId/vote", handler)
+	data.e.POST("/api/thread/:slugOrId/create", handler)
+	data.e.GET("/api/thread/:slugOrId/details", handler)
+	data.e.POST("/api/thread/:slugOrId/details", handler)
+	data.e.GET("/api/thread/:slugOrId/posts", handler)
+	data.e.POST("/api/thread/:slugOrId/vote", handler)
 
-	data.e.POST("/user/:nickname/create", data.user.Create)
-	data.e.GET("/user/:nickname/profile", data.user.GetUserData)
-	data.e.POST("/user/:nickname/profile", data.user.UpdateUserData)
+	data.e.POST("/api/user/:nickname/create", data.user.Create)
+	data.e.GET("/api/user/:nickname/profile", data.user.GetUserData)
+	data.e.POST("/api/user/:nickname/profile", data.user.UpdateUserData)
 }
 
 func main() {

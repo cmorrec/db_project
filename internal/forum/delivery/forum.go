@@ -46,3 +46,24 @@ func (h Handler) GetForumBySlug(c echo.Context) error {
 
 	return models.SendResponse(c, forum)
 }
+
+func (h Handler) CreateThread(c echo.Context) error {
+	newThread := new(models.Thread)
+	if err := c.Bind(newThread); err != nil {
+		// TODO error
+		return nil
+	}
+	newThread.Slug = c.Param("slug")
+
+	responseThread, err := h.ForumUcase.CreateThread(*newThread)
+	if err != nil {
+		switch err.Error() {
+		case "404":
+			return models.SendResponseWithErrorNotFound(c)
+		case "409":
+			return models.SendResponseWithErrorConflict(c, responseThread)
+		}
+	}
+
+	return models.SendResponseCreate(c, responseThread)
+}
