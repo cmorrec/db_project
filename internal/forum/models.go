@@ -7,14 +7,16 @@ import (
 
 type ForumHandler interface {
 	CreateForum(c echo.Context) error
+	GetForumBySlug(c echo.Context) error
 }
 
 type ForumUsecase interface {
-	CreateForum(user models.Forum) (*models.Forum, error)
+	CreateForum(forum models.Forum) (*models.Forum, error)
+	GetForumBySlug(slug string) (*models.Forum, error)
 }
 
 type ForumRepo interface {
-	CreateForum(newUser models.Forum) (models.Forum, error)
+	CreateForum(newForum models.Forum) (models.Forum, error)
 	GetBySlug(slug string) (models.Forum, error)
 	GetUserByNickName(nickname string) (models.User, error)
 }

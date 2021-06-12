@@ -35,3 +35,12 @@ func (u forumUsecase) CreateForum(forum_ models.Forum) (*models.Forum, error) {
 
 	return &newForum, nil
 }
+
+func (u forumUsecase) GetForumBySlug(slug string) (*models.Forum, error) {
+	forum_, err := u.forumRepository.GetBySlug(slug)
+	if err != nil || forum_.Slug == "" {
+		return nil, &utils.CustomError{"404"}
+	}
+
+	return &forum_, nil
+}

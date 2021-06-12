@@ -27,8 +27,8 @@ func (u userUsecase) Create(user_ models.User) (*models.User, error) {
 
 func (u userUsecase) GetByNickName(nickname string) (*models.User, error) {
 	user_, err := u.userRepository.GetByNickName(nickname)
-	if err != nil {
-		return nil, err
+	if err != nil || user_.Nickname == "" {
+		return nil, &utils.CustomError{"404"}
 	}
 
 	return &user_, nil

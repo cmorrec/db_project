@@ -31,7 +31,7 @@ func handler(c echo.Context) error {
 
 func route(data initRoute) {
 	data.e.POST("/forum/create", data.forum.CreateForum)
-	data.e.GET("/forum/:slug/details", handler)
+	data.e.GET("/forum/:slug/details", data.forum.GetForumBySlug)
 	data.e.POST("/forum/:slug/create", handler)
 	data.e.GET("/forum/:slug/users", handler)
 	data.e.GET("/forum/:slug/threads", handler)

@@ -37,3 +37,12 @@ func (h Handler) CreateForum(c echo.Context) error {
 
 	return models.SendResponseCreate(c, responseForum)
 }
+
+func (h Handler) GetForumBySlug(c echo.Context) error {
+	forum, err := h.ForumUcase.GetForumBySlug(c.Param("slug"))
+	if err != nil {
+		return models.SendResponseWithErrorNotFound(c)
+	}
+
+	return models.SendResponse(c, forum)
+}
