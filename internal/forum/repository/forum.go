@@ -5,6 +5,7 @@ import (
 	"forums/internal/forum"
 	"forums/internal/models"
 	"forums/internal/user"
+	"strings"
 )
 
 type forumRepo struct {
@@ -46,7 +47,7 @@ func (u forumRepo) GetForumBySlug(slug string) (models.Forum, error) {
 		&forum_.Posts,
 		&forum_.Threads,
 	)
-	if forum_.Slug != slug {
+	if !strings.EqualFold(forum_.Slug, slug) {
 		return models.Forum{}, err
 	}
 	return *forum_, nil

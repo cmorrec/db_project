@@ -28,6 +28,7 @@ func (u forumUsecase) CreateForum(forum_ models.Forum) (*models.Forum, error) {
 		return &sameSlugForum, &utils.CustomError{"409"}
 	}
 
+	forum_.User = user.Nickname
 	newForum, err := u.forumRepository.CreateForum(forum_)
 	if err != nil {
 		return &newForum, err
@@ -57,6 +58,7 @@ func (u forumUsecase) CreateThread(thread models.Thread) (*models.Thread, error)
 		return &sameTitleThread, &utils.CustomError{"409"}
 	}
 
+	thread.Author = user.Nickname
 	newForum, err := u.forumRepository.CreateThread(thread)
 	if err != nil {
 		return &newForum, err

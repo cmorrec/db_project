@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"fmt"
 	"forums/internal/models"
 	"forums/internal/user"
 	"forums/utils"
@@ -62,7 +61,6 @@ func (u userUsecase) UpdateUserData(user_ models.User) (*models.User, error) {
 	// 2 check that not 409
 	sameEmailUser, err := u.userRepository.GetByEmail(user_.Email)
 	if err == nil && sameEmailUser.Email != "" && sameEmailUser.Nickname != user_.Nickname {
-		fmt.Println("update usecase ", sameEmailUser, user_)
 		return nil, &utils.CustomError{"409"}
 	}
 
