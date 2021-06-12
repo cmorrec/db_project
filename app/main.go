@@ -4,6 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 	"forums/config"
+	"forums/internal/forum"
+	forumDelivery "forums/internal/forum/delivery"
+	forumRepo "forums/internal/forum/repository"
+	forumUcase "forums/internal/forum/usecase"
 	"forums/internal/user"
 	userDelivery "forums/internal/user/delivery/http"
 	userRepo "forums/internal/user/repository"
@@ -15,8 +19,9 @@ import (
 )
 
 type initRoute struct {
-	e    *echo.Echo
-	user user.UserHandler
+	e     *echo.Echo
+	user  user.UserHandler
+	forum forum.ForumHandler
 }
 
 func handler(c echo.Context) error {
@@ -25,10 +30,10 @@ func handler(c echo.Context) error {
 }
 
 func route(data initRoute) {
-	data.e.POST("/forum/create", handler)
+	data.e.POST("/forum/create", data.forum.CreateForum)
 	data.e.GET("/forum/:slug/details", handler)
 	data.e.POST("/forum/:slug/create", handler)
-	data.e.GET("/forum//:slug/users", handler)
+	data.e.GET("/forum/:slug/users", handler)
 	data.e.GET("/forum/:slug/threads", handler)
 
 	data.e.GET("/post/:id/details", handler)
@@ -68,9 +73,14 @@ func main() {
 	userUcase_ := userUcase.NewUserUsecase(userRepo_)
 	userHandler_ := userDelivery.NewUserHandler(userUcase_)
 
+	forumRepo_ := forumRepo.NewForumRepo(db, userRepo_)
+	forumUcase_ := forumUcase.NewForumUsecase(forumRepo_)
+	forumHandler_ := forumDelivery.NewForumHandler(forumUcase_)
+
 	route(initRoute{
-		e:    e,
-		user: userHandler_,
+		e:     e,
+		user:  userHandler_,
+		forum: forumHandler_,
 	})
 
 	e.Logger.Fatal(e.Start(":5000"))

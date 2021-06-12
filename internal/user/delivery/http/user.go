@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"forums/internal/models"
 	userModel "forums/internal/user"
 	"github.com/labstack/echo/v4"
@@ -20,7 +19,6 @@ func NewUserHandler(userUcase userModel.UserUsecase) userModel.UserHandler {
 }
 
 func (h Handler) Create(c echo.Context) error {
-	//fmt.Println("create user handler", c.ParamValues())
 	newUser := new(models.User)
 	newUser.Nickname = c.Param("nickname")
 	if err := c.Bind(newUser); err != nil {
@@ -37,7 +35,6 @@ func (h Handler) Create(c echo.Context) error {
 }
 
 func (h Handler) GetUserData(c echo.Context) error {
-	fmt.Println("get user handler", c.ParamValues())
 	user, err := h.UserUcase.GetByNickName(c.Param("nickname"))
 	if err != nil {
 		return models.SendResponseWithErrorNotFound(c)
