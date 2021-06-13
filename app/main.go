@@ -8,6 +8,10 @@ import (
 	forumDelivery "forums/internal/forum/delivery"
 	forumRepo "forums/internal/forum/repository"
 	forumUcase "forums/internal/forum/usecase"
+	"forums/internal/thread"
+	threadDelivery "forums/internal/thread/delivery"
+	threadRepo "forums/internal/thread/repository"
+	threadUcase "forums/internal/thread/usecase"
 	"forums/internal/user"
 	userDelivery "forums/internal/user/delivery/http"
 	userRepo "forums/internal/user/repository"
@@ -19,9 +23,10 @@ import (
 )
 
 type initRoute struct {
-	e     *echo.Echo
-	user  user.UserHandler
-	forum forum.ForumHandler
+	e      *echo.Echo
+	user   user.UserHandler
+	forum  forum.ForumHandler
+	thread thread.ThreadHandler
 }
 
 func handler(c echo.Context) error {
@@ -42,7 +47,7 @@ func route(data initRoute) {
 	data.e.POST("/api/service/clear", handler)
 	data.e.GET("/api/service/status", handler)
 
-	data.e.POST("/api/thread/:slugOrId/create", handler)
+	data.e.POST("/api/thread/:slugOrId/create", data.thread.AddPosts)
 	data.e.GET("/api/thread/:slugOrId/details", handler)
 	data.e.POST("/api/thread/:slugOrId/details", handler)
 	data.e.GET("/api/thread/:slugOrId/posts", handler)
@@ -77,10 +82,15 @@ func main() {
 	forumUcase_ := forumUcase.NewForumUsecase(forumRepo_)
 	forumHandler_ := forumDelivery.NewForumHandler(forumUcase_)
 
+	threadRepo_ := threadRepo.NewThreadRepo(db)
+	threadUcase_ := threadUcase.NewThreadUsecase(threadRepo_)
+	threadHandler_ := threadDelivery.NewThreadHandler(threadUcase_)
+
 	route(initRoute{
-		e:     e,
-		user:  userHandler_,
-		forum: forumHandler_,
+		e:      e,
+		user:   userHandler_,
+		forum:  forumHandler_,
+		thread: threadHandler_,
 	})
 
 	e.Logger.Fatal(e.Start(":5000"))
