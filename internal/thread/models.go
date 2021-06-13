@@ -14,6 +14,9 @@ type ThreadUsecase interface {
 }
 
 type ThreadRepo interface {
-	AddPostsByID(posts models.Posts, id int) (models.Posts, error)
-	AddPostsBySlug(posts models.Posts, slug string) (models.Posts, error)
+	AddPostsInThreadByID(posts models.Posts, id int32) (models.Posts, error)
+	AddPostsInThreadBySlug(posts models.Posts, slug string) (models.Posts, error)
+	GetThreadByID(id int32) (models.Thread, error)
+	GetThreadBySlug(slug string) (models.Thread, error)
+	GetPostByID(id int64) (models.Post, error)
 }

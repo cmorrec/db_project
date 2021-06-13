@@ -18,6 +18,7 @@ func NewUserUsecase(repo user.UserRepo) user.UserUsecase {
 
 func (u userUsecase) Create(user_ models.User) ([]models.User, error) {
 	// 1 check that not 409
+	// TODO correct this for one request for DB
 	userErrors := make([]models.User, 0)
 	userNickname, errNickname := u.userRepository.GetByNickName(user_.Nickname)
 	if errNickname == nil {

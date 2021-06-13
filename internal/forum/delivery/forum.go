@@ -22,7 +22,7 @@ func NewForumHandler(forumUsecase forumModel.ForumUsecase) forumModel.ForumHandl
 func (h Handler) CreateForum(c echo.Context) error {
 	newForum := new(models.Forum)
 	if err := c.Bind(newForum); err != nil {
-		// TODO error
+
 		return nil
 	}
 
@@ -51,7 +51,6 @@ func (h Handler) GetForumBySlug(c echo.Context) error {
 func (h Handler) CreateThread(c echo.Context) error {
 	newThread := new(models.Thread)
 	if err := c.Bind(newThread); err != nil {
-		// TODO error
 		return nil
 	}
 	forumSlug := c.Param("slug")

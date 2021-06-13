@@ -82,7 +82,7 @@ func main() {
 	forumUcase_ := forumUcase.NewForumUsecase(forumRepo_)
 	forumHandler_ := forumDelivery.NewForumHandler(forumUcase_)
 
-	threadRepo_ := threadRepo.NewThreadRepo(db)
+	threadRepo_ := threadRepo.NewThreadRepo(db, forumRepo_)
 	threadUcase_ := threadUcase.NewThreadUsecase(threadRepo_)
 	threadHandler_ := threadDelivery.NewThreadHandler(threadUcase_)
 

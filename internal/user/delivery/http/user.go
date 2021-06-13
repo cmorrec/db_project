@@ -23,7 +23,6 @@ func (h Handler) Create(c echo.Context) error {
 	newUser := new(models.User)
 	newUser.Nickname = c.Param("nickname")
 	if err := c.Bind(newUser); err != nil {
-		// TODO error
 		fmt.Println("no bind")
 		return nil
 	}
@@ -48,7 +47,6 @@ func (h Handler) UpdateUserData(c echo.Context) error {
 	updateUser := new(models.User)
 	updateUser.Nickname = c.Param("nickname")
 	if err := c.Bind(updateUser); err != nil {
-		// TODO error
 		return nil
 	}
 
