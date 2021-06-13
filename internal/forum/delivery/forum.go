@@ -4,6 +4,7 @@ import (
 	forumModel "forums/internal/forum"
 	"forums/internal/models"
 	"github.com/labstack/echo/v4"
+	"strconv"
 )
 
 type Handler struct {
@@ -66,4 +67,38 @@ func (h Handler) CreateThread(c echo.Context) error {
 	}
 
 	return models.SendResponseCreate(c, responseThread)
+}
+
+func (h Handler) GetThreadsInForum(c echo.Context) error {
+	var limit int
+	var since string
+	var desc bool
+	var err error
+
+	if c.QueryParam("limit") != "" {
+		limit, err = strconv.Atoi(c.QueryParam("limit"))
+		if err != nil {
+			limit = 100
+		}
+	} else {
+		limit = 100
+	}
+
+	since = c.QueryParam("since")
+
+	if c.QueryParam("desc") != "" {
+		desc, err = strconv.ParseBool(c.QueryParam("desc"))
+		if err != nil {
+			desc = false
+		}
+	} else {
+		desc = false
+	}
+
+	threads, err := h.ForumUcase.GetThreadsInForum(c.Param("slug"), int32(limit), since, desc)
+	if err != nil {
+		return models.SendResponseWithErrorNotFound(c)
+	}
+
+	return models.SendResponse(c, threads)
 }

@@ -1,9 +1,11 @@
 package usecase
 
 import (
+	"fmt"
 	"forums/internal/forum"
 	"forums/internal/models"
 	"forums/utils"
+	"strings"
 )
 
 type forumUsecase struct {
@@ -49,13 +51,19 @@ func (u forumUsecase) GetForumBySlug(slug string) (*models.Forum, error) {
 func (u forumUsecase) CreateThread(thread models.Thread, forumSlug string) (*models.Thread, error) {
 	// 1 check that not 404
 	user, err := u.forumRepository.GetUserByNickName(thread.Author)
-	if err != nil || user.Nickname == "" {
+	if err != nil || !strings.EqualFold(user.Nickname, thread.Author) {
+		fmt.Println("usecase forum create thread 404 user", user, err)
+		return nil, &utils.CustomError{"404"}
+	}
+	forum_, err := u.forumRepository.GetForumBySlug(forumSlug)
+	if err != nil || !strings.EqualFold(forum_.Slug, forumSlug) {
+		fmt.Println("usecase forum create thread 404 forum", forum_, err)
 		return nil, &utils.CustomError{"404"}
 	}
 	// 2 check that not 409
 	if thread.Slug != "" {
 		sameSlugThread, err := u.forumRepository.GetThreadBySlug(thread.Slug)
-		if err == nil && sameSlugThread.Title != "" {
+		if err == nil && strings.EqualFold(sameSlugThread.Slug, thread.Slug) {
 			return &sameSlugThread, &utils.CustomError{"409"}
 		}
 	}
@@ -67,4 +75,18 @@ func (u forumUsecase) CreateThread(thread models.Thread, forumSlug string) (*mod
 	}
 
 	return &newForum, nil
+}
+
+func (u forumUsecase) GetThreadsInForum(forumSlug string, limit int32, since string, desc bool) ([]models.Thread, error) {
+	// check 404
+	forum_, err := u.GetForumBySlug(forumSlug)
+	if err != nil || !strings.EqualFold(forum_.Slug, forumSlug) {
+		return []models.Thread{}, &utils.CustomError{"404"}
+	}
+
+	threads, err := u.forumRepository.GetThreadsInForum(forumSlug, limit, since, desc)
+	if err != nil {
+		return []models.Thread{}, err
+	}
+	return threads, nil
 }

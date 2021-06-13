@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"forums/internal/forum"
 	"forums/internal/models"
 	"forums/internal/user"
@@ -27,7 +28,13 @@ func (u forumRepo) CreateForum(newForum models.Forum) (models.Forum, error) {
 	VALUES ($1, $2, $3)
 	`
 
-	u.DB.QueryRow(query, newForum.Title, newForum.User, newForum.Slug)
+	_, err := u.DB.Exec(query,
+		newForum.Title,
+		newForum.User,
+		newForum.Slug)
+	if err != nil {
+		return models.Forum{}, err
+	}
 
 	return newForum, nil
 }
@@ -96,7 +103,7 @@ func (u forumRepo) GetThreadBySlug(slug string) (models.Thread, error) {
 	query :=
 		`
 	SELECT id, title, author, forum, message, votes, slug, created
-	FROM treads
+	FROM threads
 	WHERE slug=$1
 	`
 	thread_ := new(models.Thread)
@@ -114,4 +121,60 @@ func (u forumRepo) GetThreadBySlug(slug string) (models.Thread, error) {
 		return models.Thread{}, err
 	}
 	return *thread_, nil
+}
+
+func getThreadsInForumQuery(forumSlug string, limit int32, since string, desc bool) string {
+	query := fmt.Sprintf(`SELECT id, title, author, forum, message, votes, slug, created
+	FROM threads
+	WHERE forum='%s'`, forumSlug)
+
+	if since != "" {
+		if desc {
+			query += fmt.Sprintf(` AND created <= '%s'`, since)
+		} else {
+			query += fmt.Sprintf(` AND created >= '%s'`, since)
+		}
+	}
+
+	if desc {
+		query += `
+	ORDER BY created DESC
+	`
+	} else {
+		query += `
+	ORDER BY created ASC
+	`
+	}
+
+	query += fmt.Sprintf(`
+	LIMIT %d`, limit)
+
+	return query
+}
+
+func (u forumRepo) GetThreadsInForum(forumSlug string, limit int32, since string, desc bool) ([]models.Thread, error) {
+	threadsList := make([]models.Thread, 0)
+	query := getThreadsInForumQuery(forumSlug, limit, since, desc)
+	threadsDB, err := u.DB.Query(query)
+	if err != nil {
+		return []models.Thread{}, err
+	}
+	for threadsDB.Next() {
+		thread := new(models.Thread)
+		err = threadsDB.Scan(
+			&thread.Id,
+			&thread.Title,
+			&thread.Author,
+			&thread.Forum,
+			&thread.Message,
+			&thread.Votes,
+			&thread.Slug,
+			&thread.Created,
+		)
+		if err != nil {
+			return []models.Thread{}, err
+		}
+		threadsList = append(threadsList, *thread)
+	}
+	return threadsList, nil
 }

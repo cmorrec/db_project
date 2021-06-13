@@ -34,7 +34,7 @@ func route(data initRoute) {
 	data.e.GET("/api/forum/:slug/details", data.forum.GetForumBySlug)
 	data.e.POST("/api/forum/:slug/create", data.forum.CreateThread)
 	data.e.GET("/api/forum/:slug/users", handler)
-	data.e.GET("/api/forum/:slug/threads", handler)
+	data.e.GET("/api/forum/:slug/threads", data.forum.GetThreadsInForum)
 
 	data.e.GET("/api/post/:id/details", handler)
 	data.e.POST("/api/post/:id/details", handler)

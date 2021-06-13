@@ -24,7 +24,14 @@ func (u userRepo) Create(newUser models.User) (models.User, error) {
 	VALUES ($1, $2, $3, $4)
 	`
 
-	u.DB.QueryRow(query, newUser.Nickname, newUser.Fullname, newUser.About, newUser.Email)
+	_, err := u.DB.Exec(query,
+		newUser.Nickname,
+		newUser.Fullname,
+		newUser.About,
+		newUser.Email)
+	if err != nil {
+		return models.User{}, err
+	}
 
 	return newUser, nil
 }
