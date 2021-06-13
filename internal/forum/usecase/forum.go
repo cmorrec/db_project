@@ -46,16 +46,18 @@ func (u forumUsecase) GetForumBySlug(slug string) (*models.Forum, error) {
 	return &forum_, nil
 }
 
-func (u forumUsecase) CreateThread(thread models.Thread) (*models.Thread, error) {
+func (u forumUsecase) CreateThread(thread models.Thread, forumSlug string) (*models.Thread, error) {
 	// 1 check that not 404
 	user, err := u.forumRepository.GetUserByNickName(thread.Author)
 	if err != nil || user.Nickname == "" {
 		return nil, &utils.CustomError{"404"}
 	}
 	// 2 check that not 409
-	sameTitleThread, err := u.forumRepository.GetThreadByTitle(thread.Title)
-	if err == nil && sameTitleThread.Title != "" {
-		return &sameTitleThread, &utils.CustomError{"409"}
+	if thread.Slug != "" {
+		sameSlugThread, err := u.forumRepository.GetThreadBySlug(thread.Slug)
+		if err == nil && sameSlugThread.Title != "" {
+			return &sameSlugThread, &utils.CustomError{"409"}
+		}
 	}
 
 	thread.Author = user.Nickname

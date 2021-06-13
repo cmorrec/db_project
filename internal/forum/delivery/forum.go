@@ -53,9 +53,9 @@ func (h Handler) CreateThread(c echo.Context) error {
 		// TODO error
 		return nil
 	}
-	newThread.Slug = c.Param("slug")
+	forumSlug := c.Param("slug")
 
-	responseThread, err := h.ForumUcase.CreateThread(*newThread)
+	responseThread, err := h.ForumUcase.CreateThread(*newThread, forumSlug)
 	if err != nil {
 		switch err.Error() {
 		case "404":

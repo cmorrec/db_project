@@ -25,10 +25,14 @@ CREATE TABLE IF NOT EXISTS threads
 (
     id      SERIAL PRIMARY KEY,
     title   TEXT,
-    author  TEXT REFERENCES users (nickname) ON DELETE CASCADE NOT NULL,
-    forum   TEXT REFERENCES forums (slug) ON DELETE CASCADE,
+    author  CITEXT REFERENCES users (nickname) ON DELETE CASCADE NOT NULL,
+    forum   CITEXT REFERENCES forums (slug) ON DELETE CASCADE,
     message TEXT, -- описание ветки
     votes   INTEGER DEFAULT 0                                  NOT NULL,
     slug    TEXT                                               NOT NULL,
     created TIMESTAMP with time zone
 );
+
+select * from users;
+select * from forums;
+select * from threads;

@@ -14,7 +14,7 @@ type ForumHandler interface {
 type ForumUsecase interface {
 	CreateForum(forum models.Forum) (*models.Forum, error)
 	GetForumBySlug(slug string) (*models.Forum, error)
-	CreateThread(thread models.Thread) (*models.Thread, error)
+	CreateThread(thread models.Thread, forumSlug string) (*models.Thread, error)
 }
 
 type ForumRepo interface {
@@ -22,5 +22,5 @@ type ForumRepo interface {
 	GetForumBySlug(slug string) (models.Forum, error)
 	GetUserByNickName(nickname string) (models.User, error)
 	CreateThread(newThread models.Thread) (models.Thread, error)
-	GetThreadByTitle(title string) (models.Thread, error)
+	GetThreadBySlug(slug string) (models.Thread, error)
 }
