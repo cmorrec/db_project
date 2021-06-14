@@ -27,11 +27,12 @@ func (u threadUsecase) checkParentPosts(posts models.Posts) (bool, error) {
 		}
 	}
 
-	for _, id := range soughtIDs {
-		post, err := u.threadRepository.GetPostByID(id)
-		if err != nil || post.Id != id {
-			return false, err
-		}
+	num, err := u.threadRepository.GetNumOfCorrectPosts(soughtIDs)
+	if err != nil {
+		return false, err
+	}
+	if num != len(soughtIDs) {
+		return false, nil
 	}
 
 	return true, nil

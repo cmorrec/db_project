@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"forums/internal/forum"
 	"forums/internal/models"
 	"forums/internal/thread"
@@ -38,6 +39,28 @@ func (r threadRepo) GetThreadByID(id int32) (models.Thread, error) {
 		return models.Thread{}, err
 	}
 	return *thread_, nil
+}
+
+func (r threadRepo) GetNumOfCorrectPosts(ids []int64) (int, error) {
+	//select count(id) from users where id in (1,2,3);
+	var count int
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	idsArr := ""
+	for index, id := range ids {
+		if index != len(ids) - 1 {
+			idsArr += fmt.Sprintf("%d, ", id)
+		} else {
+			idsArr += fmt.Sprintf("%d", id)
+		}
+	}
+	query := fmt.Sprintf("select count(id) from users where id in (%s)", idsArr)
+	err := r.DB.QueryRow(query).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 func (r threadRepo) GetPostByID(id int64) (models.Post, error) {

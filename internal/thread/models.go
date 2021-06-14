@@ -19,4 +19,5 @@ type ThreadRepo interface {
 	GetThreadByID(id int32) (models.Thread, error)
 	GetThreadBySlug(slug string) (models.Thread, error)
 	GetPostByID(id int64) (models.Post, error)
+	GetNumOfCorrectPosts(ids []int64) (int, error)
 }
