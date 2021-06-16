@@ -1,64 +1,95 @@
 package http
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"forums/internal/models"
 	userModel "forums/internal/user"
-	"github.com/labstack/echo/v4"
+	"forums/utils"
+	"github.com/gorilla/mux"
 )
 
-type Handler struct {
+type handler struct {
 	UserUcase userModel.UserUsecase
 }
 
-func NewUserHandler(userUcase userModel.UserUsecase) userModel.UserHandler {
-	handler := &Handler{
-		UserUcase: userUcase,
+func NewUserHandler(usecase userModel.UserUsecase) userModel.UserHandler {
+	return &handler{
+		UserUcase: usecase,
 	}
-
-	return handler
 }
 
-func (h Handler) Create(c echo.Context) error {
+func (h handler) Create(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	nickname := vars["nickname"]
 	newUser := new(models.User)
-	newUser.Nickname = c.Param("nickname")
-	if err := c.Bind(newUser); err != nil {
-		fmt.Println("no bind")
-		return nil
+	err := json.NewDecoder(r.Body).Decode(&newUser)
+	defer r.Body.Close()
+	if err != nil {
+		sendErr := utils.NewError(http.StatusBadRequest, err.Error())
+		w.WriteHeader(sendErr.Code())
+		return
 	}
+
+	newUser.Nickname = nickname
 
 	responseUser, err := h.UserUcase.Create(*newUser)
 	if err != nil {
-		return models.SendResponseWithErrorConflict(c, responseUser)
+		utils.NewResponse(http.StatusConflict, responseUser).SendSuccess(w)
+		return
 	}
 
-	return models.SendResponseCreate(c, responseUser[0])
+	utils.NewResponse(http.StatusCreated, responseUser[0]).SendSuccess(w)
 }
 
-func (h Handler) GetUserData(c echo.Context) error {
-	user, err := h.UserUcase.GetByNickName(c.Param("nickname"))
+func (h handler) GetUserData(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	nickname := vars["nickname"]
+	defer r.Body.Close()
+	user, err := h.UserUcase.GetByNickName(nickname)
 	if err != nil {
-		return models.SendResponseWithErrorNotFound(c)
+		message := models.Error{
+			Message: fmt.Sprintf("Can't find user with nickname %s\n", nickname),
+		}
+		utils.NewResponse(http.StatusNotFound, message).SendSuccess(w)
+		return
 	}
-	return models.SendResponse(c, user)
+
+	utils.NewResponse(http.StatusOK, user).SendSuccess(w)
 }
 
-func (h Handler) UpdateUserData(c echo.Context) error {
+func (h handler) UpdateUserData(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	nickname := vars["nickname"]
 	updateUser := new(models.User)
-	updateUser.Nickname = c.Param("nickname")
-	if err := c.Bind(updateUser); err != nil {
-		return nil
+	err := json.NewDecoder(r.Body).Decode(&updateUser)
+	defer r.Body.Close()
+	if err != nil {
+		sendErr := utils.NewError(http.StatusBadRequest, err.Error())
+		w.WriteHeader(sendErr.Code())
+		return
 	}
 
+	updateUser.Nickname = nickname
 	responseUser, err := h.UserUcase.UpdateUserData(*updateUser)
 	if err != nil {
 		switch err.Error() {
 		case "404":
-			return models.SendResponseWithErrorNotFound(c)
+			message := models.Error{
+				Message: fmt.Sprintf("Can't find user with nickname %s\n", nickname),
+			}
+			utils.NewResponse(http.StatusNotFound, message).SendSuccess(w)
+			return
 		case "409":
-			return models.SendResponseWithErrorConflictMessage(c)
+			message := models.Error{
+				Message: fmt.Sprintf("Can't update user with nickname %s\n", nickname),
+			}
+			utils.NewResponse(http.StatusConflict, message).SendSuccess(w)
+			return
 		}
 	}
 
-	return models.SendResponse(c, responseUser)
+	utils.NewResponse(http.StatusOK, responseUser).SendSuccess(w)
 }

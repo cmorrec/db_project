@@ -6,10 +6,12 @@ import (
 	"forums/internal/forum"
 	"forums/internal/models"
 	"forums/internal/thread"
+	"strconv"
+	"strings"
 )
 
 type threadRepo struct {
-	DB *sql.DB
+	DB        *sql.DB
 	forumRepo forum.ForumRepo
 }
 
@@ -49,7 +51,7 @@ func (r threadRepo) GetNumOfCorrectPosts(ids []int64) (int, error) {
 	}
 	idsArr := ""
 	for index, id := range ids {
-		if index != len(ids) - 1 {
+		if index != len(ids)-1 {
 			idsArr += fmt.Sprintf("%d, ", id)
 		} else {
 			idsArr += fmt.Sprintf("%d", id)
@@ -67,17 +69,54 @@ func (r threadRepo) GetPostByID(id int64) (models.Post, error) {
 	panic("implement me")
 }
 
-func (r threadRepo) AddPostsInThreadByID(posts models.Posts, id int32) (models.Posts, error) {
-	panic("implement me")
-}
+func (r threadRepo) AddPostsInThreadByID(posts models.Posts, threadId int32, forumSlug string) (models.Posts, error) {
+	// insert into posts (thread, forum, author, parent, created, message, isEdited)
+	// select 3, '', unnest([], [], [], [], [])
+	if len(posts.Posts) == 0 {
+		fmt.Println(15)
+		return models.Posts{}, nil
+	}
+	created := posts.Posts[0].Created
+	authors := make([]string, 0)
+	parents := make([]string, 0)
+	messages := make([]string, 0)
+	fmt.Println(16)
+	for _, post := range posts.Posts {
+		authors = append(authors, post.Author)
+		parents = append(parents, strconv.FormatInt(post.Parent, 10))
+		messages = append(messages, post.Message)
+	}
+	fmt.Println(17)
+	authorsString := strings.Join(authors, ", ")
+	parentsString := strings.Join(parents, ", ")
+	messagesString := strings.Join(messages, ", ")
 
-func (r threadRepo) AddPostsInThreadBySlug(posts models.Posts, slug string) (models.Posts, error) {
-	panic("implement me")
+	query := fmt.Sprintf(`
+	insert into posts (thread, forum, created, author, parent, message)
+	select %d, '%s', %s, unnest([%s], [%s], [%s]) returning id
+	`, threadId, forumSlug, created, authorsString, parentsString, messagesString)
+	fmt.Println(18, query)
+	postsDB, err := r.DB.Query(query)
+	if err != nil {
+		fmt.Println(19, err)
+		return models.Posts{}, nil
+	}
+	i := 0
+	for postsDB.Next() {
+		err := postsDB.Scan(&posts.Posts[i].Id)
+		fmt.Println(20, i)
+		if err != nil {
+			return models.Posts{}, nil
+		}
+		i++
+	}
+	fmt.Println(21)
+	return posts, nil
 }
 
 func NewThreadRepo(db *sql.DB, repo forum.ForumRepo) thread.ThreadRepo {
 	return &threadRepo{
-		DB: db,
+		DB:        db,
 		forumRepo: repo,
 	}
 }

@@ -1,9 +1,13 @@
 package delivery
 
 import (
+	"encoding/json"
+	"fmt"
 	forumModel "forums/internal/forum"
 	"forums/internal/models"
-	"github.com/labstack/echo/v4"
+	"forums/utils"
+	"github.com/gorilla/mux"
+	"net/http"
 	"strconv"
 )
 
@@ -19,63 +23,94 @@ func NewForumHandler(forumUsecase forumModel.ForumUsecase) forumModel.ForumHandl
 	return handler
 }
 
-func (h Handler) CreateForum(c echo.Context) error {
+func (h Handler) CreateForum(w http.ResponseWriter, r *http.Request) {
 	newForum := new(models.Forum)
-	if err := c.Bind(newForum); err != nil {
-
-		return nil
+	err := json.NewDecoder(r.Body).Decode(&newForum)
+	defer r.Body.Close()
+	if err != nil {
+		sendErr := utils.NewError(http.StatusBadRequest, err.Error())
+		w.WriteHeader(sendErr.Code())
+		return
 	}
 
 	responseForum, err := h.ForumUcase.CreateForum(*newForum)
 	if err != nil {
 		switch err.Error() {
 		case "404":
-			return models.SendResponseWithErrorNotFound(c)
+			message := models.Error{
+				Message: fmt.Sprintf("Can't find user with nickname \n"),
+			}
+			utils.NewResponse(http.StatusNotFound, message).SendSuccess(w)
+			return
 		case "409":
-			return models.SendResponseWithErrorConflict(c, responseForum)
+			utils.NewResponse(http.StatusConflict, responseForum).SendSuccess(w)
+			return
 		}
 	}
 
-	return models.SendResponseCreate(c, responseForum)
+	utils.NewResponse(http.StatusCreated, responseForum).SendSuccess(w)
 }
 
-func (h Handler) GetForumBySlug(c echo.Context) error {
-	forum, err := h.ForumUcase.GetForumBySlug(c.Param("slug"))
+func (h Handler) GetForumBySlug(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	slug := vars["slug"]
+	defer r.Body.Close()
+
+	forum, err := h.ForumUcase.GetForumBySlug(slug)
 	if err != nil {
-		return models.SendResponseWithErrorNotFound(c)
+		message := models.Error{
+			Message: fmt.Sprintf("Can't find forum with slug %s\n", slug),
+		}
+		utils.NewResponse(http.StatusNotFound, message).SendSuccess(w)
+		return
 	}
 
-	return models.SendResponse(c, forum)
+	utils.NewResponse(http.StatusOK, forum).SendSuccess(w)
 }
 
-func (h Handler) CreateThread(c echo.Context) error {
+func (h Handler) CreateThread(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	forumSlug := vars["slug"]
 	newThread := new(models.Thread)
-	if err := c.Bind(newThread); err != nil {
-		return nil
+	err := json.NewDecoder(r.Body).Decode(&newThread)
+	if err != nil {
+		sendErr := utils.NewError(http.StatusBadRequest, err.Error())
+		w.WriteHeader(sendErr.Code())
+		return
 	}
-	forumSlug := c.Param("slug")
+	defer r.Body.Close()
 
 	responseThread, err := h.ForumUcase.CreateThread(*newThread, forumSlug)
 	if err != nil {
 		switch err.Error() {
 		case "404":
-			return models.SendResponseWithErrorNotFound(c)
+			message := models.Error{
+				Message: fmt.Sprintf("Can't find forum with slug %s\n", forumSlug),
+			}
+			utils.NewResponse(http.StatusNotFound, message).SendSuccess(w)
+			return
 		case "409":
-			return models.SendResponseWithErrorConflict(c, responseThread)
+			utils.NewResponse(http.StatusConflict, responseThread).SendSuccess(w)
+			return
 		}
 	}
 
-	return models.SendResponseCreate(c, responseThread)
+	utils.NewResponse(http.StatusCreated, responseThread).SendSuccess(w)
 }
 
-func (h Handler) GetThreadsInForum(c echo.Context) error {
+func (h Handler) GetThreadsInForum(w http.ResponseWriter, r *http.Request) {
 	var limit int
 	var since string
 	var desc bool
 	var err error
 
-	if c.QueryParam("limit") != "" {
-		limit, err = strconv.Atoi(c.QueryParam("limit"))
+
+	vars := mux.Vars(r)
+	defer r.Body.Close()
+
+	limitQuery :=  r.URL.Query().Get("limit")
+	if limitQuery != "" {
+		limit, err = strconv.Atoi(limitQuery)
 		if err != nil {
 			limit = 100
 		}
@@ -83,10 +118,11 @@ func (h Handler) GetThreadsInForum(c echo.Context) error {
 		limit = 100
 	}
 
-	since = c.QueryParam("since")
+	since = r.URL.Query().Get("since")
 
-	if c.QueryParam("desc") != "" {
-		desc, err = strconv.ParseBool(c.QueryParam("desc"))
+	descQuery := r.URL.Query().Get("desc")
+	if descQuery != "" {
+		desc, err = strconv.ParseBool(descQuery)
 		if err != nil {
 			desc = false
 		}
@@ -94,10 +130,15 @@ func (h Handler) GetThreadsInForum(c echo.Context) error {
 		desc = false
 	}
 
-	threads, err := h.ForumUcase.GetThreadsInForum(c.Param("slug"), int32(limit), since, desc)
+	slug := vars["slug"]
+	threads, err := h.ForumUcase.GetThreadsInForum(slug, int32(limit), since, desc)
 	if err != nil {
-		return models.SendResponseWithErrorNotFound(c)
+		message := models.Error{
+			Message: fmt.Sprintf("Can't find forum with slug %s\n", slug),
+		}
+		utils.NewResponse(http.StatusNotFound, message).SendSuccess(w)
+		return
 	}
 
-	return models.SendResponse(c, threads)
+	utils.NewResponse(http.StatusOK, threads).SendSuccess(w)
 }

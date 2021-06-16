@@ -2,11 +2,11 @@ package thread
 
 import (
 	"forums/internal/models"
-	"github.com/labstack/echo/v4"
+	"net/http"
 )
 
 type ThreadHandler interface {
-	AddPosts(c echo.Context) error
+	AddPosts(w http.ResponseWriter, r *http.Request)
 }
 
 type ThreadUsecase interface {
@@ -14,8 +14,7 @@ type ThreadUsecase interface {
 }
 
 type ThreadRepo interface {
-	AddPostsInThreadByID(posts models.Posts, id int32) (models.Posts, error)
-	AddPostsInThreadBySlug(posts models.Posts, slug string) (models.Posts, error)
+	AddPostsInThreadByID(posts models.Posts, threadID int32, forumSlug string) (models.Posts, error)
 	GetThreadByID(id int32) (models.Thread, error)
 	GetThreadBySlug(slug string) (models.Thread, error)
 	GetPostByID(id int64) (models.Post, error)

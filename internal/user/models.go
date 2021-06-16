@@ -2,13 +2,13 @@ package user
 
 import (
 	"forums/internal/models"
-	"github.com/labstack/echo/v4"
+	"net/http"
 )
 
 type UserHandler interface {
-	Create(c echo.Context) error
-	GetUserData(c echo.Context) error
-	UpdateUserData(c echo.Context) error
+	Create(w http.ResponseWriter, r *http.Request)
+	GetUserData(w http.ResponseWriter, r *http.Request)
+	UpdateUserData(w http.ResponseWriter, r *http.Request)
 }
 
 type UserUsecase interface {

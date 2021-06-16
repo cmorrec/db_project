@@ -1,33 +1,50 @@
 package delivery
 
 import (
+	"encoding/json"
+	"fmt"
 	"forums/internal/models"
 	threadModel "forums/internal/thread"
-	"github.com/labstack/echo/v4"
+	"forums/utils"
+	"github.com/gorilla/mux"
+	"net/http"
 )
 
 type Handler struct {
 	threadUcase threadModel.ThreadUsecase
 }
 
-func (h Handler) AddPosts(c echo.Context) error {
-	slugOrId := c.Param("slugOrId")
+func (h Handler) AddPosts(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	slugOrId := vars["slugOrId"]
 	posts := new(models.Posts)
-	if err := c.Bind(posts.Posts); err != nil {
-		return nil
-	}
-
-	responsePosts, err := h.threadUcase.AddPosts(*posts, slugOrId)
+	err := json.NewDecoder(r.Body).Decode(&posts.Posts)
 	if err != nil {
+		fmt.Println(1)
+		sendErr := utils.NewError(http.StatusBadRequest, err.Error())
+		w.WriteHeader(sendErr.Code())
+		return
+	}
+	defer r.Body.Close()
+	fmt.Println(2)
+	responsePosts, err := h.threadUcase.AddPosts(*posts, slugOrId)
+	fmt.Println(3)
+	if err != nil {
+		fmt.Println(4)
 		switch err.Error() {
 		case "404":
-			return models.SendResponseWithErrorNotFound(c)
+			fmt.Println(5)
+			w.WriteHeader(http.StatusNotFound)
+			return
 		case "409":
-			return models.SendResponseWithErrorConflictMessage(c)
+			fmt.Println(6)
+			utils.NewResponse(http.StatusConflict, responsePosts).SendSuccess(w)
+			return
 		}
 	}
-
-	return models.SendResponse(c, responsePosts)
+	fmt.Println(7)
+	utils.NewResponse(http.StatusOK, responsePosts)
+	return
 }
 
 func NewThreadHandler(threadUcase threadModel.ThreadUsecase) threadModel.ThreadHandler {

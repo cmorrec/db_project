@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"fmt"
 	"forums/internal/models"
 	"forums/internal/thread"
 	"forums/utils"
@@ -41,15 +42,19 @@ func (u threadUsecase) checkParentPosts(posts models.Posts) (bool, error) {
 func (u threadUsecase) addPostsByID(posts models.Posts, id int32) (models.Posts, error) {
 	// 404 thread
 	thread_, err := u.threadRepository.GetThreadByID(id)
+	fmt.Println(11)
 	if err != nil || thread_.Id != id {
+		fmt.Println(12, err)
 		return models.Posts{}, &utils.CustomError{"404"}
 	}
 	// 409 posts
 	ok, err := u.checkParentPosts(posts)
+	fmt.Println(13, ok, err)
 	if !ok || err != nil {
 		return models.Posts{}, &utils.CustomError{"409"}
 	}
-	posts_, err := u.threadRepository.AddPostsInThreadByID(posts, id)
+	posts_, err := u.threadRepository.AddPostsInThreadByID(posts, thread_.Id, thread_.Forum)
+	fmt.Println(14, posts_, err)
 	if err != nil {
 		return models.Posts{}, err
 	}
@@ -68,7 +73,7 @@ func (u threadUsecase) addPostsBySlug(posts models.Posts, slug string) (models.P
 	if !ok || err != nil {
 		return models.Posts{}, &utils.CustomError{"409"}
 	}
-	posts_, err := u.threadRepository.AddPostsInThreadBySlug(posts, slug)
+	posts_, err := u.threadRepository.AddPostsInThreadByID(posts, thread_.Id, thread_.Forum)
 	if err != nil {
 		return models.Posts{}, err
 	}
@@ -78,9 +83,12 @@ func (u threadUsecase) addPostsBySlug(posts models.Posts, slug string) (models.P
 
 func (u threadUsecase) AddPosts(posts models.Posts, slugOrId string) (models.Posts, error) {
 	slug, id, isId := isID(slugOrId)
+	fmt.Println(8, slug, id, slugOrId, isId)
 	if isId {
+		fmt.Println(9)
 		return u.addPostsByID(posts, id)
 	} else {
+		fmt.Println(10)
 		return u.addPostsBySlug(posts, slug)
 	}
 }

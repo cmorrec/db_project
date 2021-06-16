@@ -1,6 +1,11 @@
 package main
 
 import (
+	_ "errors"
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
+	"net/http"
+
 	"database/sql"
 	"fmt"
 	"forums/config"
@@ -16,46 +21,62 @@ import (
 	userDelivery "forums/internal/user/delivery/http"
 	userRepo "forums/internal/user/repository"
 	userUcase "forums/internal/user/usecase"
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	"github.com/gorilla/mux"
+	_ "github.com/jackc/pgx"
 	_ "github.com/lib/pq"
 	"log"
 )
 
-type initRoute struct {
-	e      *echo.Echo
+func LogMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		next.ServeHTTP(w, req)
+	})
+}
+
+type Router struct {
 	user   user.UserHandler
 	forum  forum.ForumHandler
 	thread thread.ThreadHandler
 }
 
-func handler(c echo.Context) error {
-	fmt.Println("paramValues = ", c.ParamValues(), "\nPath = ", c.Path())
-	return nil
+func handler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("paramValues = ", mux.Vars(r), "\nPath = ", r.RequestURI, "\nBody", r.Body)
+	return
 }
 
-func route(data initRoute) {
-	data.e.POST("/api/forum/create", data.forum.CreateForum)
-	data.e.GET("/api/forum/:slug/details", data.forum.GetForumBySlug)
-	data.e.POST("/api/forum/:slug/create", data.forum.CreateThread)
-	data.e.GET("/api/forum/:slug/users", handler)
-	data.e.GET("/api/forum/:slug/threads", data.forum.GetThreadsInForum)
+func newRouter(r Router) *mux.Router {
+	router := mux.NewRouter()
+	router.Use(LogMiddleware)
 
-	data.e.GET("/api/post/:id/details", handler)
-	data.e.POST("/api/post/:id/details", handler)
+	_user := router.PathPrefix("/api/user").Subrouter()
+	_user.HandleFunc("/{nickname}/create", r.user.Create).Methods(http.MethodPost)
+	_user.HandleFunc("/{nickname}/profile", r.user.GetUserData).Methods(http.MethodGet)
+	_user.HandleFunc("/{nickname}/profile", r.user.UpdateUserData).Methods(http.MethodPost)
 
-	data.e.POST("/api/service/clear", handler)
-	data.e.GET("/api/service/status", handler)
+	_forum := router.PathPrefix("/api/forum").Subrouter()
+	_forum.HandleFunc("/create", r.forum.CreateForum).Methods(http.MethodPost)
+	_forum.HandleFunc("/{slug}/details", r.forum.GetForumBySlug).Methods(http.MethodGet)
+	_forum.HandleFunc("/{slug}/create", r.forum.CreateThread).Methods(http.MethodPost)
+	_forum.HandleFunc("/{slug}/users", handler).Methods(http.MethodGet)
+	_forum.HandleFunc("/{slug}/threads", r.forum.GetThreadsInForum).Methods(http.MethodGet)
 
-	data.e.POST("/api/thread/:slugOrId/create", data.thread.AddPosts)
-	data.e.GET("/api/thread/:slugOrId/details", handler)
-	data.e.POST("/api/thread/:slugOrId/details", handler)
-	data.e.GET("/api/thread/:slugOrId/posts", handler)
-	data.e.POST("/api/thread/:slugOrId/vote", handler)
+	_post := router.PathPrefix("/api/post").Subrouter()
+	_post.HandleFunc("/{id}/details", handler).Methods(http.MethodGet)
+	_post.HandleFunc("/{id}/details", handler).Methods(http.MethodPost)
 
-	data.e.POST("/api/user/:nickname/create", data.user.Create)
-	data.e.GET("/api/user/:nickname/profile", data.user.GetUserData)
-	data.e.POST("/api/user/:nickname/profile", data.user.UpdateUserData)
+	_service := router.PathPrefix("/api/service").Subrouter()
+	_service.HandleFunc("/clear", handler).Methods(http.MethodPost)
+	_service.HandleFunc("/status", handler).Methods(http.MethodGet)
+
+	_thread := router.PathPrefix("/api/thread").Subrouter()
+	_thread.HandleFunc("/{slugOrId}/create", r.thread.AddPosts).Methods(http.MethodPost)
+	_thread.HandleFunc("/{slugOrId}/details", handler).Methods(http.MethodGet)
+	_thread.HandleFunc("/{slugOrId}/details", handler).Methods(http.MethodPost)
+	_thread.HandleFunc("/{slugOrId}/posts", handler).Methods(http.MethodGet)
+	_thread.HandleFunc("/{slugOrId}/vote", handler).Methods(http.MethodPost)
+
+	return router
 }
 
 func main() {
@@ -86,12 +107,21 @@ func main() {
 	threadUcase_ := threadUcase.NewThreadUsecase(threadRepo_)
 	threadHandler_ := threadDelivery.NewThreadHandler(threadUcase_)
 
-	route(initRoute{
-		e:      e,
+	routes := Router{
 		user:   userHandler_,
 		forum:  forumHandler_,
 		thread: threadHandler_,
-	})
+	}
 
-	e.Logger.Fatal(e.Start(":5000"))
+	router := newRouter(routes)
+
+	server := &http.Server{
+		Handler: router,
+		Addr:    ":5000",
+	}
+
+	fmt.Println("start server at ", server.Addr)
+	if err := server.ListenAndServe(); err != nil {
+		fmt.Println("cant start this, error: ", err)
+	}
 }
