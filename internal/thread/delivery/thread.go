@@ -2,7 +2,6 @@ package delivery
 
 import (
 	"encoding/json"
-	"fmt"
 	"forums/internal/models"
 	threadModel "forums/internal/thread"
 	"forums/utils"
@@ -20,31 +19,29 @@ func (h Handler) AddPosts(w http.ResponseWriter, r *http.Request) {
 	posts := new(models.Posts)
 	err := json.NewDecoder(r.Body).Decode(&posts.Posts)
 	if err != nil {
-		fmt.Println(1)
 		sendErr := utils.NewError(http.StatusBadRequest, err.Error())
 		w.WriteHeader(sendErr.Code())
 		return
 	}
 	defer r.Body.Close()
-	fmt.Println(2)
+	if len(posts.Posts) == 0 {
+		utils.NewResponse(http.StatusCreated, posts.Posts).SendSuccess(w)
+		return
+	}
 	responsePosts, err := h.threadUcase.AddPosts(*posts, slugOrId)
-	fmt.Println(3)
+
 	if err != nil {
-		fmt.Println(4)
 		switch err.Error() {
 		case "404":
-			fmt.Println(5)
 			w.WriteHeader(http.StatusNotFound)
 			return
 		case "409":
-			fmt.Println(6)
-			utils.NewResponse(http.StatusConflict, responsePosts).SendSuccess(w)
+			utils.NewResponse(http.StatusConflict, responsePosts.Posts).SendSuccess(w)
 			return
 		}
 	}
-	fmt.Println(7)
-	utils.NewResponse(http.StatusOK, responsePosts)
-	return
+
+	utils.NewResponse(http.StatusCreated, responsePosts.Posts).SendSuccess(w)
 }
 
 func NewThreadHandler(threadUcase threadModel.ThreadUsecase) threadModel.ThreadHandler {

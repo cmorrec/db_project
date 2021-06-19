@@ -6,8 +6,6 @@ import (
 	"forums/internal/forum"
 	"forums/internal/models"
 	"forums/internal/thread"
-	"strconv"
-	"strings"
 )
 
 type threadRepo struct {
@@ -73,44 +71,81 @@ func (r threadRepo) AddPostsInThreadByID(posts models.Posts, threadId int32, for
 	// insert into posts (thread, forum, author, parent, created, message, isEdited)
 	// select 3, '', unnest([], [], [], [], [])
 	if len(posts.Posts) == 0 {
-		fmt.Println(15)
 		return models.Posts{}, nil
 	}
-	created := posts.Posts[0].Created
-	authors := make([]string, 0)
-	parents := make([]string, 0)
-	messages := make([]string, 0)
-	fmt.Println(16)
+	var created = ""
+	//authors := make([]string, 0)
+	//parents := make([]string, 0)
+	//messages := make([]string, 0)
 	for _, post := range posts.Posts {
-		authors = append(authors, post.Author)
-		parents = append(parents, strconv.FormatInt(post.Parent, 10))
-		messages = append(messages, post.Message)
+		//authors = append(authors, post.Author)
+		//parents = append(parents, strconv.FormatInt(post.Parent, 10))
+		//messages = append(messages, post.Message)
+		if created == "" && post.Created != "" {
+			created = post.Created
+		}
 	}
-	fmt.Println(17)
-	authorsString := strings.Join(authors, ", ")
-	parentsString := strings.Join(parents, ", ")
-	messagesString := strings.Join(messages, ", ")
+	//authorsString := strings.Join(authors, "', '")
+	//parentsString := strings.Join(parents, ", ")
+	//messagesString := strings.Join(messages, "', '")
 
-	query := fmt.Sprintf(`
-	insert into posts (thread, forum, created, author, parent, message)
-	select %d, '%s', %s, unnest([%s], [%s], [%s]) returning id
-	`, threadId, forumSlug, created, authorsString, parentsString, messagesString)
-	fmt.Println(18, query)
+	var query string
+	//if created != "" {
+	//	query = fmt.Sprintf(`
+	//insert into posts (thread, forum, created, author, parent, message)
+	//select %d, '%s', '%s', unnest(array['%s'], array[%s], array['%s']) returning id
+	//`, threadId, forumSlug, created, authorsString, parentsString, messagesString)
+	//} else {
+	//	query = fmt.Sprintf(`
+	//insert into posts (thread, forum, author, parent, message)
+	//select %d, '%s', unnest(array['%s'], array[%s], array['%s']) returning id
+	//`, threadId, forumSlug, authorsString, parentsString, messagesString)
+	//}
+	if created != "" {
+		query = `
+					insert into posts (thread, forum, created, author, parent, message) values`
+		for index, post := range posts.Posts {
+			query += fmt.Sprintf(`
+					(%d, '%s', '%s', '%s', %d, '%s')`,
+					threadId, forumSlug, post.Created, post.Author, post.Parent, post.Message)
+			if index != len(posts.Posts) - 1 {
+				query += ", "
+			}
+		}
+		query += ` returning id, created`
+	} else {
+		query = `
+					insert into posts (thread, forum, author, parent, message) values`
+		for index, post := range posts.Posts {
+			query += fmt.Sprintf(`
+					(%d, '%s', '%s', %d, '%s')`,
+					threadId, forumSlug, post.Author, post.Parent, post.Message)
+			if index != len(posts.Posts) - 1 {
+				query += ", "
+			}
+		}
+		query += ` returning id`
+	}
+
 	postsDB, err := r.DB.Query(query)
 	if err != nil {
-		fmt.Println(19, err)
 		return models.Posts{}, nil
 	}
 	i := 0
 	for postsDB.Next() {
-		err := postsDB.Scan(&posts.Posts[i].Id)
-		fmt.Println(20, i)
-		if err != nil {
-			return models.Posts{}, nil
+		if created != "" {
+			err = postsDB.Scan(&posts.Posts[i].Id, &posts.Posts[i].Created)
+		} else {
+			err = postsDB.Scan(&posts.Posts[i].Id)
 		}
+		if err != nil {
+			return models.Posts{}, err
+		}
+		posts.Posts[i].Forum = forumSlug
+		posts.Posts[i].Thread = threadId
 		i++
 	}
-	fmt.Println(21)
+
 	return posts, nil
 }
 
