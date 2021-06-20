@@ -30,7 +30,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS threads
     forum   CITEXT REFERENCES forums (slug) ON DELETE CASCADE,
     message TEXT, -- описание ветки
     votes   INTEGER DEFAULT 0                                    NOT NULL,
-    slug    TEXT                                                 NOT NULL,
+    slug    CITEXT                                               NOT NULL,
     created TIMESTAMP with time zone
 );
 
@@ -52,6 +52,8 @@ select *
 from forums;
 select *
 from threads;
-
 select *
 from posts;
+
+SELECT COUNT(*) from pg_stat_activity;
+SELECT * FROM pg_stat_activity;

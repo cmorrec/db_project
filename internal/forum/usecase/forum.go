@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"fmt"
 	"forums/internal/forum"
 	"forums/internal/models"
 	"forums/utils"
@@ -52,12 +51,10 @@ func (u forumUsecase) CreateThread(thread models.Thread, forumSlug string) (*mod
 	// 1 check that not 404
 	user, err := u.forumRepository.GetUserByNickName(thread.Author)
 	if err != nil || !strings.EqualFold(user.Nickname, thread.Author) {
-		fmt.Println("usecase forum create thread 404 user", user, err)
 		return nil, &utils.CustomError{"404"}
 	}
 	forum_, err := u.forumRepository.GetForumBySlug(forumSlug)
 	if err != nil || !strings.EqualFold(forum_.Slug, forumSlug) {
-		fmt.Println("usecase forum create thread 404 forum", forum_, err)
 		return nil, &utils.CustomError{"404"}
 	}
 	// 2 check that not 409
@@ -69,6 +66,7 @@ func (u forumUsecase) CreateThread(thread models.Thread, forumSlug string) (*mod
 	}
 
 	thread.Author = user.Nickname
+	thread.Forum = forum_.Slug
 	newForum, err := u.forumRepository.CreateThread(thread)
 	if err != nil {
 		return &newForum, err

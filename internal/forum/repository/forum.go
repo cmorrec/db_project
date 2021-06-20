@@ -117,7 +117,7 @@ func (u forumRepo) GetThreadBySlug(slug string) (models.Thread, error) {
 		&thread_.Slug,
 		&thread_.Created,
 	)
-	if !strings.EqualFold(thread_.Slug, slug) {
+	if !strings.EqualFold(thread_.Slug, slug) || err != nil {
 		return models.Thread{}, err
 	}
 	return *thread_, nil
