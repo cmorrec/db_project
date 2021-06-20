@@ -74,7 +74,7 @@ func newRouter(r Router) *mux.Router {
 	_thread.HandleFunc("/{slugOrId}/details", handler).Methods(http.MethodGet)
 	_thread.HandleFunc("/{slugOrId}/details", handler).Methods(http.MethodPost)
 	_thread.HandleFunc("/{slugOrId}/posts", handler).Methods(http.MethodGet)
-	_thread.HandleFunc("/{slugOrId}/vote", handler).Methods(http.MethodPost)
+	_thread.HandleFunc("/{slugOrId}/vote", r.thread.Vote).Methods(http.MethodPost)
 
 	return router
 }

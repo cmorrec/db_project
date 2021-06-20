@@ -13,8 +13,65 @@ type threadRepo struct {
 	forumRepo forum.ForumRepo
 }
 
+func (r threadRepo) VoteInThreadByID(threadID int32, nickname string, voice int32) error {
+	query := `
+				INSERT INTO votes (author, thread, voice) values ($1, $2, $3)
+	`
+	_, err := r.DB.Exec(query, nickname, threadID, voice)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r threadRepo) UpdateThreadVotes(threadID int32, votes int32) error {
+	query := `
+				UPDATE threads SET votes=$2 WHERE id=$1
+	`
+	_, err := r.DB.Exec(query, threadID, votes)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r threadRepo) UpdateVoteInThreadByID(threadID int32, nickname string, voice int32) error {
+	query := `
+				UPDATE votes SET voice=$3 WHERE author=$1 AND thread=$2
+	`
+	_, err := r.DB.Exec(query, nickname, threadID, voice)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r threadRepo) GetVoteInThread(threadID int32, nickname string) (int32, bool, error) {
+	var voice int32
+	var err error
+	query :=
+		`
+	SELECT voice
+	FROM votes
+	WHERE thread=$1 and author=$2
+	`
+	err = r.DB.QueryRow(query, threadID, nickname).Scan(&voice)
+	if err != nil {
+		return voice, false, err
+	}
+
+	return voice, true, nil
+}
+
 func (r threadRepo) GetThreadBySlug(slug string) (models.Thread, error) {
 	return r.forumRepo.GetThreadBySlug(slug)
+}
+
+func (r threadRepo) GetUserByNickName(nickname string) (models.User, error) {
+	return r.forumRepo.GetUserByNickName(nickname)
 }
 
 func (r threadRepo) GetThreadByID(id int32) (models.Thread, error) {
@@ -107,8 +164,8 @@ func (r threadRepo) AddPostsInThreadByID(posts models.Posts, threadId int32, for
 		for index, post := range posts.Posts {
 			query += fmt.Sprintf(`
 					(%d, '%s', '%s', '%s', %d, '%s')`,
-					threadId, forumSlug, post.Created, post.Author, post.Parent, post.Message)
-			if index != len(posts.Posts) - 1 {
+				threadId, forumSlug, post.Created, post.Author, post.Parent, post.Message)
+			if index != len(posts.Posts)-1 {
 				query += ", "
 			}
 		}
@@ -119,8 +176,8 @@ func (r threadRepo) AddPostsInThreadByID(posts models.Posts, threadId int32, for
 		for index, post := range posts.Posts {
 			query += fmt.Sprintf(`
 					(%d, '%s', '%s', %d, '%s')`,
-					threadId, forumSlug, post.Author, post.Parent, post.Message)
-			if index != len(posts.Posts) - 1 {
+				threadId, forumSlug, post.Author, post.Parent, post.Message)
+			if index != len(posts.Posts)-1 {
 				query += ", "
 			}
 		}

@@ -2,6 +2,7 @@ DROP TABLE IF EXISTS forums CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS threads CASCADE;
 DROP TABLE IF EXISTS posts CASCADE;
+DROP TABLE IF EXISTS votes CASCADE;
 
 CREATE UNLOGGED TABLE IF NOT EXISTS users
 (
@@ -43,7 +44,16 @@ CREATE UNLOGGED TABLE IF NOT EXISTS posts
     thread   INTEGER REFERENCES threads (id) ON DELETE CASCADE    NOT NULL,
     created  TIMESTAMP with time zone,
     message  TEXT,
-    isEdited BOOLEAN                       DEFAULT FALSE
+    isEdited BOOLEAN DEFAULT FALSE
+);
+
+CREATE UNLOGGED TABLE votes
+(
+    id     SERIAL PRIMARY KEY,
+    author CITEXT REFERENCES users (nickname) ON DELETE CASCADE NOT NULL,
+    thread INTEGER REFERENCES threads (id) ON DELETE CASCADE    NOT NULL,
+    voice  INTEGER                                              NOT NULL,
+    UNIQUE (author, thread)
 );
 
 select *
@@ -55,5 +65,7 @@ from threads;
 select *
 from posts;
 
-SELECT COUNT(*) from pg_stat_activity;
-SELECT * FROM pg_stat_activity;
+SELECT COUNT(*)
+from pg_stat_activity;
+SELECT *
+FROM pg_stat_activity;

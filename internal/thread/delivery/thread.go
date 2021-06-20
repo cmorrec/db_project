@@ -13,6 +13,30 @@ type Handler struct {
 	threadUcase threadModel.ThreadUsecase
 }
 
+func (h Handler) Vote(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	slugOrId := vars["slugOrId"]
+	vote := new(models.Vote)
+	err := json.NewDecoder(r.Body).Decode(&vote)
+	if err != nil {
+		sendErr := utils.NewError(http.StatusBadRequest, err.Error())
+		w.WriteHeader(sendErr.Code())
+		return
+	}
+	defer r.Body.Close()
+
+	threadVote, err := h.threadUcase.Vote(*vote, slugOrId)
+	if err != nil {
+		switch err.Error() {
+		case "404":
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+	}
+
+	utils.NewResponse(http.StatusOK, threadVote).SendSuccess(w)
+}
+
 func (h Handler) AddPosts(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	slugOrId := vars["slugOrId"]
