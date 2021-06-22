@@ -2,6 +2,7 @@ package delivery
 
 import (
 	"encoding/json"
+	"fmt"
 	"forums/internal/models"
 	threadModel "forums/internal/thread"
 	"forums/utils"
@@ -66,6 +67,23 @@ func (h Handler) AddPosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.NewResponse(http.StatusCreated, responsePosts.Posts).SendSuccess(w)
+}
+
+func (h Handler) GetThread(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	slugOrID := vars["slugOrId"]
+	defer r.Body.Close()
+
+	thread, err := h.threadUcase.GetThread(slugOrID)
+	if err != nil {
+		message := models.Error{
+			Message: fmt.Sprintf("Can't find thread with slug %s\n", slugOrID),
+		}
+		utils.NewResponse(http.StatusNotFound, message).SendSuccess(w)
+		return
+	}
+
+	utils.NewResponse(http.StatusOK, thread).SendSuccess(w)
 }
 
 func NewThreadHandler(threadUcase threadModel.ThreadUsecase) threadModel.ThreadHandler {

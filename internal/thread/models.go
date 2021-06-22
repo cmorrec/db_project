@@ -8,11 +8,13 @@ import (
 type ThreadHandler interface {
 	AddPosts(w http.ResponseWriter, r *http.Request)
 	Vote(w http.ResponseWriter, r *http.Request)
+	GetThread(w http.ResponseWriter, r *http.Request)
 }
 
 type ThreadUsecase interface {
 	AddPosts(posts models.Posts, slugOrId string) (models.Posts, error)
 	Vote(vote models.Vote, slugOrId string) (models.Thread, error)
+	GetThread(slugOrId string) (models.Thread, error)
 }
 
 type ThreadRepo interface {

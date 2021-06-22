@@ -71,7 +71,7 @@ func newRouter(r Router) *mux.Router {
 
 	_thread := router.PathPrefix("/api/thread").Subrouter()
 	_thread.HandleFunc("/{slugOrId}/create", r.thread.AddPosts).Methods(http.MethodPost)
-	_thread.HandleFunc("/{slugOrId}/details", handler).Methods(http.MethodGet)
+	_thread.HandleFunc("/{slugOrId}/details", r.thread.GetThread).Methods(http.MethodGet)
 	_thread.HandleFunc("/{slugOrId}/details", handler).Methods(http.MethodPost)
 	_thread.HandleFunc("/{slugOrId}/posts", handler).Methods(http.MethodGet)
 	_thread.HandleFunc("/{slugOrId}/vote", r.thread.Vote).Methods(http.MethodPost)

@@ -12,6 +12,22 @@ type threadUsecase struct {
 	threadRepository thread.ThreadRepo
 }
 
+func (u threadUsecase) GetThread(slugOrId string) (models.Thread, error) {
+	var thread_ models.Thread
+	var err error
+	slug, id, isId := isID(slugOrId)
+	if isId {
+		thread_, err = u.GetThreadByID(id)
+	} else {
+		thread_, err = u.GetThreadBySlug(slug)
+	}
+	if err != nil || thread_.Slug == "" {
+		return models.Thread{}, &utils.CustomError{"404"}
+	}
+
+	return thread_, nil
+}
+
 func (u threadUsecase) Vote(vote models.Vote, slugOrId string) (models.Thread, error) {
 	var thread_ models.Thread
 	var err error
